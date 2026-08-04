@@ -8,6 +8,12 @@ Designed mobile-first, dark by default, and intentionally kept simple — no
 database, no build step, no frameworks. Add it to the iPhone home screen and it
 opens fullscreen like a native app.
 
+| Today | History | Manage |
+|:---:|:---:|:---:|
+| ![Today view showing doses grouped by time of day](docs/screenshots/today.png) | ![Seven-day adherence grid and recent activity](docs/screenshots/history.png) | ![Medication list with edit, pause, and delete](docs/screenshots/manage.png) |
+
+<sub>Screenshots use sample data.</sub>
+
 ## Features
 
 - **Today** — every dose for the day grouped into Morning / Afternoon / Evening,
