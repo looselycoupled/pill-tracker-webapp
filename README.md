@@ -33,8 +33,13 @@ phone's clock rather than the container's.
 ## Run with Docker Compose
 
 ```bash
-docker compose up --build
+docker compose up -d
 ```
+
+Pulls the prebuilt image from `ghcr.io/looselycoupled/pill-tracker-webapp`
+(amd64 and arm64, rebuilt on every push to `main`). To build from source
+instead, swap the compose file's `image:` line for `build: .` and run
+`docker compose up --build`.
 
 Then open <http://localhost:8070>.
 

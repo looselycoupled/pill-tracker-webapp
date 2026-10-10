@@ -11,8 +11,10 @@ from __future__ import annotations
 import json
 import os
 import shutil
+import threading
 import uuid
 from datetime import datetime, timezone
+from functools import wraps
 
 from flask import Flask, jsonify, render_template, request
 
@@ -24,6 +26,20 @@ BACKUP_DIR = os.path.join(DATA_DIR, "backups")
 
 # Keep the activity log from growing forever on a device that's never cleaned up.
 LOG_RETENTION_DAYS = 120
+
+# Every write is load -> modify -> save on the whole file. Without a lock, two
+# overlapping requests both load the old file and the second save silently
+# drops the first one's change. This only covers threads in one process, which
+# is why the Dockerfile runs a single gunicorn worker.
+_data_lock = threading.Lock()
+
+
+def with_data_lock(view):
+    @wraps(view)
+    def wrapper(*args, **kwargs):
+        with _data_lock:
+            return view(*args, **kwargs)
+    return wrapper
 
 
 def get_default_data() -> dict:
@@ -110,6 +126,7 @@ def api_data():
 
 
 @app.post("/api/medications")
+@with_data_lock
 def add_medication():
     data = load_data()
     body = request.get_json(silent=True) or {}
@@ -137,6 +154,7 @@ def add_medication():
 
 
 @app.put("/api/medications/<med_id>")
+@with_data_lock
 def update_medication(med_id):
     data = load_data()
     med = find_medication(data, med_id)
@@ -171,6 +189,7 @@ def update_medication(med_id):
 
 
 @app.delete("/api/medications/<med_id>")
+@with_data_lock
 def delete_medication(med_id):
     data = load_data()
     med = find_medication(data, med_id)
@@ -184,6 +203,7 @@ def delete_medication(med_id):
 
 
 @app.post("/api/log/toggle")
+@with_data_lock
 def toggle_log():
     """Flip the taken/not-taken state for one scheduled dose on one date."""
     data = load_data()
@@ -226,6 +246,7 @@ def toggle_log():
 
 
 @app.post("/api/backup")
+@with_data_lock
 def create_backup():
     """Snapshot the data file into data/backups/ with a timestamped name."""
     # Timestamp uses the container's local clock (TZ is set in compose) so the
